@@ -30,28 +30,25 @@ pnpm install
 pnpm dev
 ```
 
-Abrí [http://localhost:3000](http://localhost:3000) (o el puerto que muestre la consola).
+Abrí la URL que imprime Vite (por defecto suele ser `http://localhost:5173`).
 
 Otros comandos:
 
 | Comando        | Descripción                          |
 |----------------|--------------------------------------|
-| `pnpm build`   | Build de producción en `dist/public` |
+| `pnpm build`   | Build de producción en `dist`        |
 | `pnpm serve`   | Vista previa del build (Vite)        |
 | `pnpm typecheck` | `tsc` sin emitir archivos          |
 
-### Variables de entorno (opcional)
-
-| Variable    | Efecto                                      | Default |
-|-------------|---------------------------------------------|---------|
-| `PORT`      | Puerto del dev server y de `vite preview`   | `3000`  |
-| `BASE_PATH` | Base URL si servís la app bajo un subpath   | `/`     |
-
-En PowerShell, por ejemplo: `$env:PORT=5173; pnpm dev`.
-
 ## Despliegue
 
-El artefacto es estático: subí el contenido de `dist/public` a cualquier hosting de archivos estáticos (GitHub Pages, Cloudflare Pages, nginx, etc.). Ajustá `BASE_PATH` en el build si la app no vive en la raíz del dominio.
+### Vercel
+
+El repo incluye `vercel.json`: instalación con pnpm, `pnpm run build` y carpeta de salida `dist`. Conectá el repositorio desde el dashboard y publicá sin variables de entorno. Si ya tenías un proyecto creado, dispará un redeploy para que tome la nueva configuración.
+
+### Otros hosts
+
+El build es estático: serví el contenido de `dist` detrás de cualquier CDN o servidor de archivos estáticos. Para SPAs con rutas del lado del cliente, configurá fallback a `index.html` (en Vercel ya está el `rewrites` en `vercel.json`).
 
 ## Licencia
 
