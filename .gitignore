@@ -1,0 +1,29 @@
+# Dependencies
+node_modules
+
+# Build / Vite
+dist
+*.local
+
+# Environment (secrets)
+.env
+.env.*
+!.env.example
+
+# Logs & debug
+npm-debug.log*
+pnpm-debug.log*
+*.log
+
+# TypeScript
+*.tsbuildinfo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage
+
+# Editor (opcional: quita la línea si quieres compartir ajustes del equipo en .vscode)
+.idea
