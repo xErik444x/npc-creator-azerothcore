@@ -33,6 +33,8 @@ export const duplicateFormSchema = z.object({
   source_entry: z.number().min(1, "Source Entry ID is required").default(1),
   new_entry: z.number().min(1, "New Entry ID is required").default(900002),
   new_name: z.string().default(""),
+  new_subname: z.string().default(""),
+  npc_type: z.string().default("vendor"),
 });
 
 export type DuplicateFormValues = z.infer<typeof duplicateFormSchema>;
@@ -164,7 +166,20 @@ export function generateCreateSql(data: VendorFormValues): string {
 }
 
 export function generateDuplicateSql(data: DuplicateFormValues): string {
-  const { source_entry, new_entry, new_name } = data;
+  const { source_entry, new_entry, new_name, new_subname, npc_type } = data;
+
+  const npcFlagMap: Record<string, number> = {
+    vendor: 128,
+    gossip: 1,
+    trainer: 16,
+    questgiver: 2,
+    flightmaster: 32,
+    vendor_gossip: 129,
+    trainer_gossip: 17,
+    questgiver_gossip: 3,
+  };
+
+  const npcflag = npcFlagMap[npc_type] ?? 128;
 
   let sql = `-- ============================================\n`;
   sql += `-- Duplicate Vendor: ${source_entry} -> ${new_entry}\n`;
@@ -175,35 +190,41 @@ export function generateDuplicateSql(data: DuplicateFormValues): string {
 
   sql += `-- Step 1: Copy creature_template\n`;
   sql += `DELETE FROM \`creature_template\` WHERE \`entry\` = ${new_entry};\n`;
-  if (new_name) {
-    sql += `INSERT INTO \`creature_template\`\n`;
-    sql += `  SELECT ${new_entry}, \`difficulty_entry_1\`, \`difficulty_entry_2\`, \`difficulty_entry_3\`,\n`;
-    sql += `    \`KillCredit1\`, \`KillCredit2\`, '${esc(new_name)}', \`subname\`, \`IconName\`, \`gossip_menu_id\`,\n`;
-    sql += `    \`minlevel\`, \`maxlevel\`, \`exp\`, \`faction\`, \`npcflag\`,\n`;
-    sql += `    \`speed_walk\`, \`speed_run\`, \`speed_swim\`, \`speed_flight\`, \`detection_range\`,\n`;
-    sql += `    \`rank\`, \`dmgschool\`, \`DamageModifier\`, \`BaseAttackTime\`, \`RangeAttackTime\`,\n`;
-    sql += `    \`BaseVariance\`, \`RangeVariance\`, \`unit_class\`, \`unit_flags\`, \`unit_flags2\`,\n`;
-    sql += `    \`dynamicflags\`, \`family\`, \`type\`, \`type_flags\`, \`lootid\`, \`pickpocketloot\`,\n`;
-    sql += `    \`skinloot\`, \`PetSpellDataId\`, \`VehicleId\`, \`mingold\`, \`maxgold\`,\n`;
-    sql += `    \`AIName\`, \`MovementType\`, \`HoverHeight\`, \`HealthModifier\`, \`ManaModifier\`,\n`;
-    sql += `    \`ArmorModifier\`, \`ExperienceModifier\`, \`RacialLeader\`, \`movementId\`,\n`;
-    sql += `    \`RegenHealth\`, \`flags_extra\`, \`ScriptName\`, 0\n`;
-    sql += `  FROM \`creature_template\` WHERE \`entry\` = ${source_entry};\n\n`;
-  } else {
-    sql += `INSERT INTO \`creature_template\`\n`;
-    sql += `  SELECT ${new_entry}, \`difficulty_entry_1\`, \`difficulty_entry_2\`, \`difficulty_entry_3\`,\n`;
-    sql += `    \`KillCredit1\`, \`KillCredit2\`, \`name\`, \`subname\`, \`IconName\`, \`gossip_menu_id\`,\n`;
-    sql += `    \`minlevel\`, \`maxlevel\`, \`exp\`, \`faction\`, \`npcflag\`,\n`;
-    sql += `    \`speed_walk\`, \`speed_run\`, \`speed_swim\`, \`speed_flight\`, \`detection_range\`,\n`;
-    sql += `    \`rank\`, \`dmgschool\`, \`DamageModifier\`, \`BaseAttackTime\`, \`RangeAttackTime\`,\n`;
-    sql += `    \`BaseVariance\`, \`RangeVariance\`, \`unit_class\`, \`unit_flags\`, \`unit_flags2\`,\n`;
-    sql += `    \`dynamicflags\`, \`family\`, \`type\`, \`type_flags\`, \`lootid\`, \`pickpocketloot\`,\n`;
-    sql += `    \`skinloot\`, \`PetSpellDataId\`, \`VehicleId\`, \`mingold\`, \`maxgold\`,\n`;
-    sql += `    \`AIName\`, \`MovementType\`, \`HoverHeight\`, \`HealthModifier\`, \`ManaModifier\`,\n`;
-    sql += `    \`ArmorModifier\`, \`ExperienceModifier\`, \`RacialLeader\`, \`movementId\`,\n`;
-    sql += `    \`RegenHealth\`, \`flags_extra\`, \`ScriptName\`, 0\n`;
-    sql += `  FROM \`creature_template\` WHERE \`entry\` = ${source_entry};\n\n`;
-  }
+
+  const nameField = new_name ? `'${esc(new_name)}'` : `\`name\``;
+  const subnameField = new_subname ? `'${esc(new_subname)}'` : `\`subname\``;
+
+  sql += `INSERT INTO \`creature_template\` (\n`;
+  sql += `  \`entry\`, \`difficulty_entry_1\`, \`difficulty_entry_2\`, \`difficulty_entry_3\`,\n`;
+  sql += `  \`KillCredit1\`, \`KillCredit2\`,\n`;
+  sql += `  \`name\`, \`subname\`, \`IconName\`, \`gossip_menu_id\`,\n`;
+  sql += `  \`minlevel\`, \`maxlevel\`, \`exp\`,\n`;
+  sql += `  \`faction\`, \`npcflag\`,\n`;
+  sql += `  \`speed_walk\`, \`speed_run\`, \`speed_swim\`, \`speed_flight\`, \`detection_range\`,\n`;
+  sql += `  \`rank\`, \`dmgschool\`, \`DamageModifier\`,\n`;
+  sql += `  \`BaseAttackTime\`, \`RangeAttackTime\`, \`BaseVariance\`, \`RangeVariance\`,\n`;
+  sql += `  \`unit_class\`, \`unit_flags\`, \`unit_flags2\`, \`dynamicflags\`,\n`;
+  sql += `  \`family\`, \`type\`, \`type_flags\`,\n`;
+  sql += `  \`lootid\`, \`pickpocketloot\`, \`skinloot\`,\n`;
+  sql += `  \`PetSpellDataId\`, \`VehicleId\`,\n`;
+  sql += `  \`mingold\`, \`maxgold\`,\n`;
+  sql += `  \`AIName\`, \`MovementType\`, \`HoverHeight\`,\n`;
+  sql += `  \`HealthModifier\`, \`ManaModifier\`, \`ArmorModifier\`, \`ExperienceModifier\`,\n`;
+  sql += `  \`RacialLeader\`, \`movementId\`, \`RegenHealth\`,\n`;
+  sql += `  \`flags_extra\`, \`ScriptName\`, \`VerifiedBuild\`\n`;
+  sql += `)\n`;
+  sql += `  SELECT ${new_entry}, \`difficulty_entry_1\`, \`difficulty_entry_2\`, \`difficulty_entry_3\`,\n`;
+  sql += `    \`KillCredit1\`, \`KillCredit2\`, ${nameField}, ${subnameField}, \`IconName\`, \`gossip_menu_id\`,\n`;
+  sql += `    \`minlevel\`, \`maxlevel\`, \`exp\`, \`faction\`, ${npcflag},\n`;
+  sql += `    \`speed_walk\`, \`speed_run\`, \`speed_swim\`, \`speed_flight\`, \`detection_range\`,\n`;
+  sql += `    \`rank\`, \`dmgschool\`, \`DamageModifier\`, \`BaseAttackTime\`, \`RangeAttackTime\`,\n`;
+  sql += `    \`BaseVariance\`, \`RangeVariance\`, \`unit_class\`, \`unit_flags\`, \`unit_flags2\`,\n`;
+  sql += `    \`dynamicflags\`, \`family\`, \`type\`, \`type_flags\`, \`lootid\`, \`pickpocketloot\`,\n`;
+  sql += `    \`skinloot\`, \`PetSpellDataId\`, \`VehicleId\`, \`mingold\`, \`maxgold\`,\n`;
+  sql += `    \`AIName\`, \`MovementType\`, \`HoverHeight\`, \`HealthModifier\`, \`ManaModifier\`,\n`;
+  sql += `    \`ArmorModifier\`, \`ExperienceModifier\`, \`RacialLeader\`, \`movementId\`,\n`;
+  sql += `    \`RegenHealth\`, \`flags_extra\`, \`ScriptName\`, 0\n`;
+  sql += `  FROM \`creature_template\` WHERE \`entry\` = ${source_entry};\n\n`;
 
   sql += `-- Step 2: Copy creature_template_model (appearance)\n`;
   sql += `DELETE FROM \`creature_template_model\` WHERE \`CreatureID\` = ${new_entry};\n`;

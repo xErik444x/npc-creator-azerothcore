@@ -79,6 +79,17 @@ const RANK_OPTIONS = [
   { value: "4", label: "Rare" },
 ];
 
+const DUPLICATE_NPC_TYPE_OPTIONS = [
+  { value: "vendor", label: "Vendor (128)" },
+  { value: "gossip", label: "Gossip (1)" },
+  { value: "trainer", label: "Trainer (16)" },
+  { value: "questgiver", label: "Quest Giver (2)" },
+  { value: "flightmaster", label: "Flight Master (32)" },
+  { value: "vendor_gossip", label: "Vendor + Gossip (129)" },
+  { value: "trainer_gossip", label: "Trainer + Gossip (17)" },
+  { value: "questgiver_gossip", label: "Quest Giver + Gossip (3)" },
+];
+
 const ICON_NAME_OPTIONS = [
   { value: "__none__", label: "None" },
   { value: "Speak", label: "Speak (chat bubble)" },
@@ -152,7 +163,7 @@ export function VendorCreator() {
   // ── Duplicate form ───────────────────────────────────────────────────────
   const duplicateForm = useForm<DuplicateFormValues>({
     resolver: zodResolver(duplicateFormSchema),
-    defaultValues: { source_entry: 10000, new_entry: 900002, new_name: "" },
+    defaultValues: { source_entry: 10000, new_entry: 900002, new_name: "", new_subname: "", npc_type: "vendor" },
     mode: "onChange",
   });
 
@@ -639,9 +650,26 @@ export function VendorCreator() {
                           </div>
                         </div>
                         <Separator />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <Label>New Name (Optional)</Label>
+                            <Input placeholder="Leave blank to keep original name" {...duplicateForm.register("new_name")} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>New Subname (Optional)</Label>
+                            <Input placeholder="Leave blank to keep original subname" {...duplicateForm.register("new_subname")} />
+                          </div>
+                        </div>
                         <div className="space-y-2 max-w-md">
-                          <Label>New Name (Optional)</Label>
-                          <Input placeholder="Leave blank to keep original name" {...duplicateForm.register("new_name")} />
+                          <Label>NPC Type</Label>
+                          <Controller
+                            control={duplicateForm.control}
+                            name="npc_type"
+                            render={({ field }) => (
+                              <SimpleSelect value={field.value ?? "vendor"} onChange={field.onChange} options={DUPLICATE_NPC_TYPE_OPTIONS} />
+                            )}
+                          />
+                          <p className="text-xs text-muted-foreground">Sets the npcflag for the duplicated NPC.</p>
                         </div>
                         <div className="bg-primary/10 text-primary-foreground/80 p-4 rounded-md text-sm border border-primary/20">
                           <span className="font-semibold text-primary block mb-1">Note on Duplication:</span>
